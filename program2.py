@@ -4,8 +4,11 @@ from tkinter import ttk
 from tkinter import scrolledtext
 import serial.tools.list_ports as ConectedPorts
 import serial
-PuertosDisponibles = []
+import threading
 
+isConectado = False 
+PuertosDisponibles = []
+arduino = None
 def listarPuertos():
     ports = []
 
@@ -26,11 +29,47 @@ def actualizarPuertos():
         print("No hay dispositivos Conectados")
 
 def conectar():
+    global isConectado
+    global arduino
     port = listaConexion.get()
     baudrate = 115200
-    ser = serial.Serial(port, baudrate)
+    arduino = serial.Serial(port, baudrate)
+    
     print(f"Conectado a {port} a {baudrate} baudios")
+    if isConectado == False:
+        isConectado = True
+        update_console()
 
+def read_serial_data():
+    """
+    Lee los datos del puerto serial y los muestra en la consola de la GUI.
+    """
+    global arduino
+    try:
+        data = arduino.readline().decode('utf-8').strip()
+        #consola.insert(tk.END, data + '\n')
+        print(data)
+    except:
+        print("No pudo leer")
+
+def update_console():
+    """
+    Actualiza la consola de la GUI cada 100 milisegundos.
+    """
+    global isConectado
+    if isConectado == True:
+        threading.Thread(target=arduino_handler, daemon=True).start()
+
+def enviarDato(dato):
+    """Dato debe llegar en formato Byte"""
+    global arduino
+    arduino.write(dato)       
+
+def arduino_handler():
+    global arduino
+    while True:
+        data = arduino.readline().decode('utf-8').strip()
+        print(data)
 
 #Antes de iniciar la interfaz mando a actualizar los puertos
 #actualizarPuertos()
@@ -56,15 +95,15 @@ listaConexion.pack(padx=5, side="left")
 #listaConexion.after(5000, actualizarPuertos)
 botonRefresh = ttk.Button(frameConexion, text="Actualizar", command=actualizarPuertos)
 botonRefresh.pack(side="left")
-botonConectar = ttk.Button(frameConexion, text="Conectar", command=conectar)#
+botonConectar = ttk.Button(frameConexion, text="Conectar", command=lambda:conectar())#
 botonConectar.pack(side="left", padx=10)
 
 
 frameBotones = Frame(frameHerramientas, height=50)
 frameBotones.pack(side="left", anchor="center", expand = 1)
-botonIniciar = ttk.Button(frameBotones, text="Iniciar")#
+botonIniciar = ttk.Button(frameBotones, text="Iniciar", command=lambda:enviarDato(b'S'))#
 botonIniciar.pack(side="left", padx=1)
-botonDetener = ttk.Button(frameBotones, text="Detener")#
+botonDetener = ttk.Button(frameBotones, text="Detener", command=lambda:enviarDato(b'T'))#
 botonDetener.pack(side="left", padx= 1)
 labelMuestras = Label(frameBotones, text="Tiempo muestreo (ms): ").pack(side="left")
 inMuestras = ttk.Spinbox(frameBotones, from_ = 5, justify="center", values=10, width=10).pack(side="left")
@@ -76,4 +115,5 @@ consola = scrolledtext.ScrolledText(frameConsola)
 consola.config(background="black", foreground="white")
 consola.pack(fill="x", expand=1)
 
+#update_console()
 raiz.mainloop()
