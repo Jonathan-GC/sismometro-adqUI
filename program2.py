@@ -4,6 +4,7 @@ from tkinter import ttk
 from tkinter import scrolledtext
 import serial.tools.list_ports as ConectedPorts
 import serial
+import time
 import threading
 
 isConectado = False 
@@ -71,6 +72,15 @@ def arduino_handler():
         data = arduino.readline().decode('utf-8').strip()
         print(data)
 
+def cambiarMuestra():
+    global isConectado
+    global inMuestras
+    if isConectado == True:
+        enviarDato(b'C')
+        tiempo = inMuestras.get()
+        time.sleep(0.2)
+        enviarDato(tiempo.encode())
+
 #Antes de iniciar la interfaz mando a actualizar los puertos
 #actualizarPuertos()
 raiz = tk.Tk()
@@ -106,14 +116,17 @@ botonIniciar.pack(side="left", padx=1)
 botonDetener = ttk.Button(frameBotones, text="Detener", command=lambda:enviarDato(b'T'))#
 botonDetener.pack(side="left", padx= 1)
 labelMuestras = Label(frameBotones, text="Tiempo muestreo (ms): ").pack(side="left")
-inMuestras = ttk.Spinbox(frameBotones, from_ = 5, justify="center", values=10, width=10).pack(side="left")
+inMuestras = ttk.Spinbox(frameBotones, from_ = 5, to=1500, justify="center", width=10, command=cambiarMuestra)
+inMuestras.pack(side="left")
 botonGuardar = ttk.Button(frameBotones, text="Guardar Excel").pack(side="left")
+#inMuestras.bind("<<increment>>", cambiarMuestra)
+#inMuestras.bind("<<Decrement>>", cambiarMuestra)
 
 frameConsola = Frame(body, background="black")
 frameConsola.pack(side="top", fill="x", ipadx=20, ipady=20)
 consola = scrolledtext.ScrolledText(frameConsola)
 consola.config(background="black", foreground="white")
 consola.pack(fill="x", expand=1)
-
+inMuestras.set(100)
 #update_console()
 raiz.mainloop()
