@@ -6,10 +6,16 @@ import serial.tools.list_ports as ConectedPorts
 import serial
 import time
 import threading
+import pandas as pd
+from datetime import datetime
+from tkinter import messagebox
 
 isConectado = False 
 PuertosDisponibles = []
 arduino = None
+datos = []
+flagExtarerData = -1
+
 def listarPuertos():
     ports = []
 
@@ -64,12 +70,24 @@ def update_console():
 def enviarDato(dato):
     """Dato debe llegar en formato Byte"""
     global arduino
-    arduino.write(dato)       
+    global flagExtarerData
+    if dato == b'S':
+        datos.clear()
+        flagExtarerData = 1
+    elif dato == b'T':
+        flagExtarerData = 0
+    arduino.write(dato)    
 
 def arduino_handler():
     global arduino
+    global flagExtarerData
     while True:
         data = arduino.readline().decode('utf-8').strip()
+
+        if flagExtarerData == 1:
+            datos.append(data.split(','))
+        consola.insert(tk.END, data+"\n")
+        consola.see("end")
         print(data)
 
 def cambiarMuestra():
@@ -80,6 +98,25 @@ def cambiarMuestra():
         tiempo = inMuestras.get()
         time.sleep(0.2)
         enviarDato(tiempo.encode())
+
+def guardarArchivo():
+
+    if flagExtarerData == 0 and isConectado == 1:
+        df = pd.DataFrame(datos, columns=['Tiempo', 'Acel1', 'Acel2'])
+        # Obtener la fecha y hora actual
+        ahora = datetime.now()
+        
+        # Formatear la fecha y hora como una cadena
+        ahora_str = ahora.strftime('%Y-%m-%d_%H-%M-%S')
+
+        # Crear el nombre del archivo con la fecha y hora
+        nombre_archivo = f'datos_arduino_{ahora_str}.xlsx'
+
+        # Guardar el DataFrame en un archivo .xlsx
+        df.to_excel(nombre_archivo, index=False)
+
+        messagebox.showinfo("Guardar", f"Archivo Guardado correctamente {nombre_archivo}")
+
 
 #Antes de iniciar la interfaz mando a actualizar los puertos
 #actualizarPuertos()
@@ -118,14 +155,14 @@ botonDetener.pack(side="left", padx= 1)
 labelMuestras = Label(frameBotones, text="Tiempo muestreo (ms): ").pack(side="left")
 inMuestras = ttk.Spinbox(frameBotones, from_ = 5, to=1500, justify="center", width=10, command=cambiarMuestra)
 inMuestras.pack(side="left")
-botonGuardar = ttk.Button(frameBotones, text="Guardar Excel").pack(side="left")
-#inMuestras.bind("<<increment>>", cambiarMuestra)
-#inMuestras.bind("<<Decrement>>", cambiarMuestra)
+botonGuardar = ttk.Button(frameBotones, text="Guardar Excel", command=guardarArchivo).pack(side="left")
+
+
 
 frameConsola = Frame(body, background="black")
 frameConsola.pack(side="top", fill="x", ipadx=20, ipady=20)
 consola = scrolledtext.ScrolledText(frameConsola)
-consola.config(background="black", foreground="white")
+consola.config(background="black", foreground="white", autoseparators=True )
 consola.pack(fill="x", expand=1)
 inMuestras.set(100)
 #update_console()
