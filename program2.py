@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk
@@ -121,6 +122,9 @@ def guardarArchivo():
 #Antes de iniciar la interfaz mando a actualizar los puertos
 #actualizarPuertos()
 raiz = tk.Tk()
+raiz.title("TecnoBot Sensor Sismometro")
+if "nt" == os.name:
+    raiz.wm_iconbitmap(bitmap = "logo.ico")
 raiz.geometry("840x420") #Configurar tamaño
 raiz.resizable(0,0)
 frameTitulo = Frame(raiz)#pack()
