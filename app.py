@@ -10,7 +10,7 @@ import threading # Importa el módulo threading para usar hilos.
 import pandas as pd # Importa pandas para manipular y analizar datos.
 from datetime import datetime # Importa datetime de datetime para trabajar con fechas y horas.
 from tkinter import messagebox # Importa messagebox de tkinter para mostrar cuadros de mensaje.
-
+from PIL import Image, ImageTk
 isConectado = False  # Inicializa isConectado como False. Esta variable indica si el dispositivo está conectado.
 PuertosDisponibles = [] # Inicializa PuertosDisponibles como una lista vacía. Esta lista almacenará los nombres de los puertos disponibles.
 arduino = None # Inicializa arduino como None. Esta variable almacenará el objeto de conexión serie.
@@ -118,22 +118,52 @@ def guardarArchivo(): # Define la función guardarArchivo.
 
         messagebox.showinfo("Guardar", f"Archivo Guardado correctamente {nombre_archivo}") # Muestra un cuadro de mensaje con la información de que el archivo se ha guardado correctamente.
 
+        import os
+        # Abrir la ventana del explorador de archivos
+        ruta_absoluta = os.path.abspath(nombre_archivo)
+        directorio = os.path.dirname(ruta_absoluta)
+        os.startfile(directorio)
+
+
+
+def limpiarDatos():
+    """Funcion para limpiar los datos de la consola y se vea mucho mejor, sin embargo esto no tiene inferencia en
+    los datos de salida de excel ya que con cada nuevo inicio de muestrra se vuelve a iniciar."""
+    consola.delete("1.0", tk.END)
+
 #Antes de iniciar la interfaz mando a actualizar los puertos
 #actualizarPuertos()
 raiz = tk.Tk() # Crea la raíz de la GUI.
-raiz.title("TecnoBot Sensor Sismometro") # Establece el título de la GUI.
+raiz.title("Sensor Sismometro") # Establece el título de la GUI.
+
 if "nt" == os.name: # Si el sistema operativo es Windows...
-    raiz.wm_iconbitmap(bitmap = "logo.ico") # Establece el icono de la GUI.
-raiz.geometry("840x420") # Establece el tamaño de la GUI.
+    raiz.wm_iconbitmap(bitmap = "sources/logo.ico") # Establece el icono de la GUI.
+    
+    
+raiz.geometry("900x620") # Establece el tamaño de la GUI.
 raiz.resizable(0,0) # Hace que la GUI no sea redimensionable.
 frameTitulo = Frame(raiz) # Crea un Titulo
+
+
 
 frameTitulo.pack(fill="x", side="top")
 frameTitulo.config(height=100)
 title = ttk.Label(frameTitulo, text="SENSOR SISMOMETRO", font=("Helvetica", 40)).pack(anchor="center", padx=50)
 
+#Incorporacion de la imagen
+img = Image.open("sources/logo.jpeg")
+resize_image = img.resize((256, 60))
+
+img = ImageTk.PhotoImage(resize_image)
+label = Label(frameTitulo, image=img)
+label.image = img
+label.pack(side="top")
+
+
 body = Frame(raiz) # Crea un nuevo marco llamado 'body' en la raíz de la GUI.
 body.pack(padx=10, side="left", fill="both", expand=1, anchor="nw") # Empaqueta el marco 'body' con un padding de 10, alineado a la izquierda, llenando tanto el ancho como el alto.
+
+
 
 frameHerramientas = Frame(body) # Crea un marco para las herramientas dentro del marco 'body'.
 frameHerramientas.pack(fill="x") # Empaqueta el marco 'frameHerramientas' llenando el ancho.
@@ -159,6 +189,9 @@ botonIniciar.pack(side="left", padx=1) # Empaqueta el botón 'botonIniciar' alin
 botonDetener = ttk.Button(frameBotones, text="Detener", command=lambda:enviarDato(b'T')) # Crea un botón para detener la recopilación de datos.
 botonDetener.pack(side="left", padx= 1) # Empaqueta el botón 'botonDetener' alineado a la izquierda con un padding de 1.
 
+botonLimpiar = ttk.Button(frameBotones, text="Limpiar", command=limpiarDatos) #Limpiar los datos
+botonLimpiar.pack(side="left", padx=1)
+
 labelMuestras = Label(frameBotones, text="Tiempo muestreo (ms): ").pack(side="left") # Crea una etiqueta para el tiempo de muestreo y la empaqueta alineada a la izquierda.
 
 inMuestras = ttk.Spinbox(frameBotones, from_ = 5, to=1500, justify="center", width=10, command=cambiarMuestra) # Crea un cuadro de entrada para ajustar el tiempo de muestreo.
@@ -176,3 +209,4 @@ consola.pack(fill="x", expand=1) # Empaqueta el área de texto desplazable 'cons
 inMuestras.set(100) # Establece el valor inicial del cuadro de entrada 'inMuestras' en 100.
 
 raiz.mainloop() # Inicia el bucle principal de la GUI, que espera eventos del usuario.
+
